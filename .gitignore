@@ -1,0 +1,9 @@
+node_modules/
+dist/
+server/data.json
+*.log
+.env
+.env.*
+.DS_Store
+__pycache__/
+.vscode/

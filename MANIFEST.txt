@@ -1,0 +1,55 @@
+FlightBook – Danh mục file dự án (đầy đủ)
+==========================================
+Cập nhật: 2026-10-22
+
+CẤU HÌNH GỐC
+  package.json
+  vite.config.ts
+  tsconfig.json
+  tsconfig.node.json
+  tailwind.config.js
+  postcss.config.js
+  index.html
+  README.md
+  MANIFEST.txt
+  HANDOFF.md              ← đọc trước khi làm tiếp (chat mới)
+
+FRONTEND (React + TypeScript + Tailwind)
+  src/main.tsx
+  src/App.tsx
+  src/index.css
+  src/types/flight.ts
+  src/data/mockFlights.ts
+  src/components/FlightSearch.tsx
+  src/components/FlightCard.tsx
+  src/components/SortBar.tsx
+  src/components/FilterBar.tsx
+  src/components/BookingFlow.tsx
+  src/components/PaymentStep.tsx
+  src/components/BookingConfirmation.tsx
+  src/components/AdminDashboard.tsx
+
+BACKEND (Express)
+  server/package.json
+  server/index.js
+
+PREVIEW (HTML thuần + Python – xem không cần npm)
+  preview/index.html
+  preview_server.py
+
+CHẠY APP REACT (máy bạn)
+  cd airline-ticket
+  npm install
+  npm run dev
+  → http://localhost:5173
+
+CHẠY PREVIEW HTML
+  cd airline-ticket
+  python3 preview_server.py
+  → http://127.0.0.1:8765   (chỉ trên máy đang chạy server)
+
+CHẠY API
+  cd airline-ticket/server
+  npm install
+  npm start
+  → http://localhost:3001

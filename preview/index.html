@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>FlightBook – Xem trước</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #f7f8fa; --card: #fff; --text: #1e293b; --muted: #94a3b8;
+  --blue: #2563eb; --blue-dark: #1d4ed8; --border: #e2e8f0;
+  --rose: #f43f5e; --green: #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, select { font-family: inherit; }
+.wrap { max-width: 420px; margin: 0 auto; padding: 0 16px; }
+header { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); height: 56px; display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.logo-icon { width: 32px; height: 32px; background: var(--blue); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+.card { background: var(--card); border-radius: 16px; border: 1px solid rgba(226,232,240,.8); box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 20px; border-radius: 14px; font-weight: 600; font-size: 15px; transition: .2s; }
+.btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.2); }
+.btn-primary:hover { background: var(--blue-dark); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-secondary { background: #fff; border: 1px solid var(--border); color: #334155; }
+.chip { display: inline-flex; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); background: #fff; white-space: nowrap; }
+.chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.field { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); font-size: 15px; outline: none; }
+.field:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+label.lbl { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 6px; }
+.nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; z-index: 40; }
+.nav button { flex: 1; padding: 10px; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.nav button.on { color: var(--blue); }
+.hidden { display: none !important; }
+.screen { padding: 24px 0; }
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; text-align: center; margin-bottom: 6px; }
+.sub { text-align: center; color: #64748b; font-size: 15px; margin-bottom: 28px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tabs button { padding: 8px 16px; font-size: 14px; font-weight: 500; color: #64748b; position: relative; }
+.tabs button.on { color: var(--blue); }
+.tabs button.on::after { content: ''; position: absolute; bottom: 0; left: 12px; right: 12px; height: 2px; background: var(--blue); border-radius: 2px; }
+.row-airports { display: grid; grid-template-columns: 1fr 1fr; }
+.airport-btn { padding: 18px 16px; text-align: left; border-right: 1px solid var(--border); }
+.airport-btn:last-child { border-right: none; }
+.airport-btn .city { font-weight: 600; font-size: 17px; }
+.airport-btn .code { font-size: 13px; color: #64748b; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
+.meta-cell { padding: 14px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.meta-cell:nth-child(2n) { border-right: none; }
+.popular { margin-top: 28px; }
+.popular p { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+.popular-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.popular-row::-webkit-scrollbar { display: none; }
+.flight { padding: 16px; margin-bottom: 10px; cursor: pointer; transition: .15s; width: 100%; text-align: left; }
+.flight:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+.flight-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.airline { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+.airline-logo { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #eff6ff; }
+.price { font-size: 18px; font-weight: 700; color: var(--blue); text-align: right; }
+.price small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+.timeline { display: flex; align-items: center; gap: 8px; }
+.time { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap { font-size: 12px; color: var(--muted); font-weight: 500; }
+.line { flex: 1; text-align: center; }
+.line .dur { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.line .bar { height: 2px; background: #e2e8f0; position: relative; border-radius: 2px; }
+.line .bar::after { content: '✈'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(90deg); font-size: 12px; background: #fff; padding: 0 2px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.modal-box { background: #fff; width: 100%; max-width: 420px; border-radius: 24px 24px 0 0; max-height: 80vh; display: flex; flex-direction: column; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px 10px; font-weight: 600; font-size: 17px; }
+.modal-list { overflow-y: auto; padding: 8px 12px 24px; }
+.ap-item { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; width: 100%; text-align: left; }
+.ap-item:hover { background: #f8fafc; }
+.ap-code { width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.steps { display: flex; align-items: center; margin-bottom: 28px; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: #f1f5f9; color: var(--muted); }
+.step-dot.on { background: var(--blue); color: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.15); }
+.step-dot.done { background: var(--blue); color: #fff; }
+.step-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; border-radius: 2px; }
+.step-line.done { background: var(--blue); }
+.seat-grid { display: grid; grid-template-columns: 24px repeat(3, 32px) 12px repeat(3, 32px); gap: 4px; justify-content: center; }
+.seat { width: 32px; height: 32px; border-radius: 8px; font-size: 10px; font-weight: 600; background: #f8fafc; border: 1px solid var(--border); color: #475569; }
+.seat.occ { background: #cbd5e1; color: #94a3b8; border: none; cursor: not-allowed; }
+.seat.sel { background: var(--blue); color: #fff; border-color: var(--blue); }
+.seat-row-num { font-size: 10px; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px; }
+.success-icon { width: 56px; height: 56px; border-radius: 50%; background: #ecfdf5; color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px; }
+.code-box { display: inline-flex; align-items: center; gap: 8px; background: #0f172a; color: #fff; font-family: ui-monospace, monospace; font-size: 20px; font-weight: 700; letter-spacing: .2em; padding: 10px 20px; border-radius: 14px; margin: 12px 0; }
+.pass-strip { background: #0f172a; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; font-size: 13px; }
+.back { font-size: 13px; font-weight: 500; color: #64748b; margin-bottom: 16px; display: inline-flex; align-items: center; gap: 4px; }
+.back:hover { color: var(--blue); }
+.preview-badge { position: fixed; top: 64px; right: 12px; z-index: 60; background: #0f172a; color: #fff; font-size: 11px; padding: 6px 10px; border-radius: 8px; opacity: .85; }
+</style>
+</head>
+<body>
+<div class="preview-badge">Python Preview · localhost:8765</div>
+<header>
+  <div class="wrap" style="display:flex;justify-content:space-between;width:100%;max-width:420px">
+    <button class="logo" onclick="go('home')">
+      <div class="logo-icon">✈</div>
+      <span>FlightBook</span>
+    </button>
+    <span id="hdrRoute" style="font-size:13px;color:#64748b;font-weight:500"></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section id="sc-home" class="screen">
+    <h1>Đi đâu bạn ơi?</h1>
+    <p class="sub">So sánh giá · Đặt vé nhanh · Bay khắp Việt Nam</p>
+    <div class="tabs">
+      <button type="button" class="on" data-trip="oneway" onclick="setTrip(this)">Một chiều</button>
+      <button type="button" data-trip="roundtrip" onclick="setTrip(this)">Khứ hồi</button>
+    </div>
+    <div class="card">
+      <div class="row-airports">
+        <button type="button" class="airport-btn" onclick="openAp('from')">
+          <div class="lbl" style="margin:0 0 4px">Điểm đi</div>
+          <div class="city" id="fromCity">Chọn sân bay</div>
+          <div class="code" id="fromCode"></div>
+        </button>
+        <button type="button" class="airport-btn" onclick="openAp('to')">
+          <div class="lbl" style="margin:0 0 4px">Điểm đến</div>
+          <div class="city" id="toCity">Chọn sân bay</div>
+          <div class="code" id="toCode"></div>
+        </button>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-cell">
+          <div class="lbl">Ngày đi</div>
+          <input type="date" class="field" id="departDate" style="border:none;padding:0;box-shadow:none"/>
+        </div>
+        <div class="meta-cell" id="returnCell" style="display:none">
+          <div class="lbl">Ngày về</div>
+          <input type="date" class="field" id="returnDate" style="border:none;padding:0;box-shadow:none"/>
+        </div>
+        <div class="meta-cell">
+          <div class="lbl">Hành khách</div>
+          <select class="field" id="pax" style="border:none;padding:0;box-shadow:none">
+            <option value="1">1 người</option>
+            <option value="2">2 người</option>
+            <option value="3">3 người</option>
+          </select>
+        </div>
+        <div class="meta-cell">
+          <div class="lbl">Hạng ghế</div>
+          <select class="field" id="cabin" style="border:none;padding:0;box-shadow:none">
+            <option value="economy">Phổ thông</option>
+            <option value="business">Thương gia</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:14px" onclick="doSearch()">Tìm chuyến bay</button>
+    <div class="popular">
+      <p>Tuyến phổ biến</p>
+      <div class="popular-row" id="popular"></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="sc-results" class="screen hidden">
+    <button class="back" onclick="go('home')">← Quay lại</button>
+    <div id="returnBanner" class="banner hidden">✓ Đã chọn chiều đi · Chọn <b>chiều về</b></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <span id="resultCount" style="font-size:14px;color:#64748b"></span>
+      <div style="display:flex;gap:6px" id="sortBar">
+        <button class="chip active" data-s="best" onclick="setSort(this)">Tốt nhất</button>
+        <button class="chip" data-s="cheapest" onclick="setSort(this)">Rẻ nhất</button>
+        <button class="chip" data-s="earliest" onclick="setSort(this)">Sớm nhất</button>
+      </div>
+    </div>
+    <div id="flightList"></div>
+  </section>
+
+  <!-- BOOKING -->
+  <section id="sc-booking" class="screen hidden">
+    <button class="back" onclick="go('results')">← Quay lại</button>
+    <div class="steps" id="stepBar"></div>
+    <div id="bookStep1">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Thông tin hành khách</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px">Nhập đúng như trên CCCD / Passport</p>
+      <div id="paxForms"></div>
+      <div class="card" style="padding:18px;margin-top:12px">
+        <div class="lbl">Email</div>
+        <input class="field" id="email" placeholder="email@example.com" style="margin-bottom:12px"/>
+        <div class="lbl">Số điện thoại</div>
+        <input class="field" id="phone" placeholder="09xxxxxxxx"/>
+      </div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="toStep(2)">Tiếp tục chọn ghế</button>
+    </div>
+    <div id="bookStep2" class="hidden">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Chọn ghế ngồi</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:12px" id="seatHint"></p>
+      <div id="paxChips" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px"></div>
+      <div class="card" style="padding:16px;overflow-x:auto">
+        <div style="text-align:center;font-size:11px;color:#94a3b8;margin-bottom:10px">Đầu máy bay</div>
+        <div class="seat-grid" id="seatMap"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="toStep(3)">Xem xác nhận</button>
+    </div>
+    <div id="bookStep3" class="hidden">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Xác nhận đặt vé</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px">Kiểm tra lại trước khi thanh toán</p>
+      <div class="card" style="padding:16px;margin-bottom:12px" id="confirmFlight"></div>
+      <div class="card" style="padding:16px;margin-bottom:12px" id="confirmPax"></div>
+      <div class="card" style="padding:16px;margin-bottom:16px" id="confirmPrice"></div>
+      <button class="btn btn-primary" onclick="go('payment')">Tiếp tục thanh toán</button>
+    </div>
+  </section>
+
+  <!-- PAYMENT -->
+  <section id="sc-payment" class="screen hidden">
+    <button class="back" onclick="go('booking')">← Quay lại</button>
+    <h2 style="font-size:20px;font-weight:700">Thanh toán</h2>
+    <p style="font-size:14px;color:#64748b;margin:6px 0 20px">Số tiền <b id="payAmount" style="color:var(--blue)"></b></p>
+    <div style="display:flex;background:#f1f5f9;border-radius:14px;padding:4px;margin-bottom:20px">
+      <button class="chip active" style="flex:1;justify-content:center;border:none" id="tabQr" onclick="payTab('qr')">QR Code</button>
+      <button class="chip" style="flex:1;justify-content:center;border:none;background:transparent" id="tabCard" onclick="payTab('card')">Thẻ</button>
+    </div>
+    <div class="card" style="padding:24px;text-align:center" id="payQr">
+      <div style="width:180px;height:180px;margin:0 auto 16px;background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:12px" id="qrGrid"></div>
+      <p style="font-size:14px;font-weight:500">Quét mã bằng app ngân hàng</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">VietQR · Giả lập</p>
+    </div>
+    <div class="card hidden" style="padding:18px" id="payCard">
+      <div class="lbl">Số thẻ</div>
+      <input class="field" placeholder="ACCT-000003" id="cardNum" style="margin-bottom:10px"/>
+      <div class="lbl">Tên trên thẻ</div>
+      <input class="field" placeholder="NGUYEN VAN A" style="margin-bottom:10px"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div class="lbl">Hết hạn</div><input class="field" placeholder="12/28"/></div>
+        <div><div class="lbl">CVV</div><input class="field" placeholder="•••" type="password"/></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="doPay()">Tôi đã thanh toán</button>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px">Thanh toán giả lập · Không trừ tiền thật</p>
+  </section>
+
+  <!-- CONFIRMED -->
+  <section id="sc-confirmed" class="screen hidden">
+    <div style="text-align:center">
+      <div class="success-icon">✓</div>
+      <h2 style="font-size:22px;font-weight:700">Đặt vé thành công</h2>
+      <p style="font-size:13px;color:#64748b;margin-top:6px">Mã đặt chỗ của bạn</p>
+      <div class="code-box" id="bookCode">------</div>
+    </div>
+    <div class="card" style="overflow:hidden;margin-top:8px">
+      <div class="pass-strip"><span>✈ Vé điện tử</span><span id="passAirline"></span></div>
+      <div style="padding:18px" id="passBody"></div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:16px" onclick="window.print()">Tải / In vé</button>
+    <button class="btn btn-primary" style="margin-top:10px" onclick="resetAll()">Đặt vé mới</button>
+  </section>
+</main>
+
+<nav class="nav">
+  <button class="on" onclick="go('home')">🔍<span>Tìm kiếm</span></button>
+  <button onclick="alert('Xem vé sau khi đặt thành công')">🎫<span>Vé của tôi</span></button>
+  <button onclick="alert('Tài khoản (demo)')">👤<span>Tài khoản</span></button>
+</nav>
+
+<div id="modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head"><span id="modalTitle">Chọn sân bay</span><button onclick="closeModal()" style="font-size:20px;padding:4px 8px">×</button></div>
+    <div style="padding:0 16px 8px"><input class="field" id="apSearch" placeholder="Tìm thành phố hoặc mã..." oninput="renderApList()"/></div>
+    <div class="modal-list" id="apList"></div>
+  </div>
+</div>
+
+<script>
+const AIRPORTS = [
+  {code:'SGN',city:'TP. Hồ Chí Minh',name:'Tân Sơn Nhất'},
+  {code:'HAN',city:'Hà Nội',name:'Nội Bài'},
+  {code:'DAD',city:'Đà Nẵng',name:'Đà Nẵng'},
+  {code:'CXR',city:'Nha Trang',name:'Cam Ranh'},
+  {code:'PQC',city:'Phú Quốc',name:'Phú Quốc'},
+  {code:'HPH',city:'Hải Phòng',name:'Cát Bi'},
+  {code:'VCA',city:'Cần Thơ',name:'Cần Thơ'},
+  {code:'DLI',city:'Đà Lạt',name:'Liên Khương'},
+];
+const AIRLINES = [
+  {code:'VN',name:'Vietnam Airlines',logo:'🇻🇳',color:'#004b87'},
+  {code:'VJ',name:'VietJet Air',logo:'🟠',color:'#e31837'},
+  {code:'QH',name:'Bamboo Airways',logo:'🎋',color:'#00a651'},
+  {code:'BL',name:'Pacific Airlines',logo:'✈️',color:'#0033a0'},
+];
+const POPULAR = [
+  ['SGN','HAN'],['HAN','SGN'],['SGN','DAD'],['HAN','DAD'],['SGN','PQC'],['HAN','CXR']
+];
+const OCCUPIED = new Set(['3A','3B','5C','7D','8A','8F','10B','12C','14E','15A','16F','18B','19D','2D','4A']);
+
+let state = {
+  trip: 'oneway', from: null, to: null,
+  flights: [], sort: 'best',
+  selectingReturn: false, outbound: null, returnF: null,
+  pax: 1, cabin: 'economy', step: 1,
+  seats: {}, activePax: 0, bookingCode: ''
+};
+
+function fmt(n){ return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n); }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+// init
+document.getElementById('departDate').value = today();
+document.getElementById('departDate').min = today();
+document.getElementById('returnDate').min = today();
+const pop = document.getElementById('popular');
+POPULAR.forEach(([a,b])=>{
+  const A = AIRPORTS.find(x=>x.code===a), B = AIRPORTS.find(x=>x.code===b);
+  const btn = document.createElement('button');
+  btn.className = 'chip';
+  btn.textContent = A.city.split(' ').pop() + ' → ' + B.city.split(' ').pop();
+  btn.onclick = () => { state.from=A; state.to=B; syncAirports(); };
+  pop.appendChild(btn);
+});
+
+function setTrip(el){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  state.trip = el.dataset.trip;
+  document.getElementById('returnCell').style.display = state.trip==='roundtrip' ? 'block' : 'none';
+}
+function syncAirports(){
+  document.getElementById('fromCity').textContent = state.from ? state.from.city : 'Chọn sân bay';
+  document.getElementById('fromCode').textContent = state.from ? state.from.code + ' · ' + state.from.name : '';
+  document.getElementById('toCity').textContent = state.to ? state.to.city : 'Chọn sân bay';
+  document.getElementById('toCode').textContent = state.to ? state.to.code + ' · ' + state.to.name : '';
+}
+let apMode = 'from';
+function openAp(mode){ apMode=mode; document.getElementById('modal').classList.remove('hidden'); document.getElementById('modalTitle').textContent = mode==='from'?'Điểm đi':'Điểm đến'; document.getElementById('apSearch').value=''; renderApList(); }
+function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+function renderApList(){
+  const q = document.getElementById('apSearch').value.toLowerCase();
+  const list = document.getElementById('apList');
+  list.innerHTML = '';
+  AIRPORTS.filter(a=>a.code.toLowerCase().includes(q)||a.city.toLowerCase().includes(q)||a.name.toLowerCase().includes(q)).forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'ap-item';
+    b.innerHTML = `<div class="ap-code">${a.code}</div><div><div style="font-weight:600">${a.city}</div><div style="font-size:13px;color:#64748b">${a.name}</div></div>`;
+    b.onclick = ()=>{
+      if(apMode==='from'){ state.from=a; if(state.to&&state.to.code===a.code) state.to=null; }
+      else { state.to=a; if(state.from&&state.from.code===a.code) state.from=null; }
+      syncAirports(); closeModal();
+    };
+    list.appendChild(b);
+  });
+}
+
+function genFlights(from, to, dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const base = new Date(y,m-1,d);
+  const hours = [6,7,8,9,10,12,14,15,17,18,19,21];
+  const out = [];
+  for(let i=0;i<8;i++){
+    const al = AIRLINES[i%AIRLINES.length];
+    const dep = new Date(base); dep.setHours(hours[i%hours.length], [0,15,30,45][i%4], 0, 0);
+    const dur = 90 + (i%4)*15;
+    const arr = new Date(dep.getTime()+dur*60000);
+    const price = (i%5===0?3200000:1100000) + i*120000;
+    out.push({
+      id: 'F'+Date.now()+i, airline: al, flightNumber: al.code+(100+i),
+      from, to, dep, arr, dur, price, seats: 12+i*2, cabin: i%5===0?'business':'economy', stops: i%7===0?1:0
+    });
+  }
+  return out;
+}
+function timeStr(dt){ return dt.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',hour12:false}); }
+
+function doSearch(){
+  if(!state.from||!state.to){ alert('Chọn điểm đi và điểm đến'); return; }
+  state.pax = +document.getElementById('pax').value;
+  state.cabin = document.getElementById('cabin').value;
+  const dd = document.getElementById('departDate').value;
+  state.flights = genFlights(state.from, state.to, dd);
+  state.selectingReturn = false; state.outbound = null; state.returnF = null;
+  document.getElementById('hdrRoute').textContent = state.from.code + ' → ' + state.to.code;
+  document.getElementById('returnBanner').classList.add('hidden');
+  go('results'); renderFlights();
+}
+function setSort(el){
+  document.querySelectorAll('#sortBar .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); state.sort = el.dataset.s; renderFlights();
+}
+function renderFlights(){
+  let list = [...state.flights];
+  if(state.sort==='cheapest') list.sort((a,b)=>a.price-b.price);
+  else if(state.sort==='earliest') list.sort((a,b)=>a.dep-b.dep);
+  else list.sort((a,b)=>(b.seats/10 - a.price/1e6) - (a.seats/10 - b.price/1e6));
+  document.getElementById('resultCount').innerHTML = `<b style="color:#1e293b">${list.length}</b> chuyến bay`;
+  const box = document.getElementById('flightList');
+  box.innerHTML = '';
+  list.forEach(f=>{
+    const btn = document.createElement('button');
+    btn.className = 'card flight';
+    btn.innerHTML = `
+      <div class="flight-top">
+        <div class="airline"><div class="airline-logo">${f.airline.logo}</div><div>${f.airline.name}<div style="font-size:11px;color:#94a3b8;font-family:monospace">${f.flightNumber}</div></div></div>
+        <div class="price">${fmt(f.price)}<small>/ khách</small></div>
+      </div>
+      <div class="timeline">
+        <div><div class="time">${timeStr(f.dep)}</div><div class="ap">${f.from.code}</div></div>
+        <div class="line"><div class="dur">${Math.floor(f.dur/60)}h ${String(f.dur%60).padStart(2,'0')}m</div><div class="bar"></div><div class="dur">${f.stops?f.stops+' dừng':'Bay thẳng'}</div></div>
+        <div style="text-align:right"><div class="time">${timeStr(f.arr)}</div><div class="ap">${f.to.code}</div></div>
+      </div>`;
+    btn.onclick = ()=>selectFlight(f);
+    box.appendChild(btn);
+  });
+}
+function selectFlight(f){
+  if(f.seats < state.pax){ alert('Không đủ ghế cho '+state.pax+' khách'); return; }
+  if(state.selectingReturn){
+    state.returnF = f; startBooking();
+  } else {
+    state.outbound = f;
+    if(state.trip==='roundtrip'){
+      const rd = document.getElementById('returnDate').value || document.getElementById('departDate').value;
+      state.flights = genFlights(state.to, state.from, rd);
+      state.selectingReturn = true;
+      document.getElementById('returnBanner').classList.remove('hidden');
+      document.getElementById('hdrRoute').textContent = state.to.code + ' → ' + state.from.code;
+      renderFlights(); window.scrollTo(0,0);
+    } else startBooking();
+  }
+}
+
+function startBooking(){
+  state.step = 1; state.seats = {}; state.activePax = 0;
+  go('booking'); toStep(1);
+  const forms = document.getElementById('paxForms'); forms.innerHTML = '';
+  for(let i=0;i<state.pax;i++){
+    forms.innerHTML += `<div class="card" style="padding:16px;margin-bottom:10px">
+      <div style="font-weight:600;margin-bottom:12px">Hành khách ${i+1}</div>
+      <div class="lbl">Họ và tên</div>
+      <input class="field pax-name" data-i="${i}" placeholder="NGUYEN VAN A" style="margin-bottom:10px;text-transform:uppercase"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><div class="lbl">Ngày sinh</div><input type="date" class="field pax-dob" data-i="${i}"/></div>
+        <div><div class="lbl">Giới tính</div><select class="field"><option>Nam</option><option>Nữ</option></select></div>
+      </div>
+      <div class="lbl">CCCD / Passport</div>
+      <input class="field pax-id" data-i="${i}" placeholder="001234567890"/>
+    </div>`;
+  }
+}
+function renderSteps(){
+  const s = state.step;
+  document.getElementById('stepBar').innerHTML = [1,2,3].map((n,i)=>`
+    <div class="step-dot ${n<s?'done':n===s?'on':''}">${n<s?'✓':n}</div>
+    ${i<2?`<div class="step-line ${n<s?'done':''}"></div>`:''}
+  `).join('');
+}
+function toStep(n){
+  if(n===2){
+    const names = [...document.querySelectorAll('.pax-name')];
+    if(names.some(el=>el.value.trim().length<2)){ alert('Nhập đủ họ tên hành khách'); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value)){ alert('Email không hợp lệ'); return; }
+    if(document.getElementById('phone').value.replace(/\D/g,'').length<9){ alert('SĐT không hợp lệ'); return; }
+  }
+  if(n===3){
+    if(Object.keys(state.seats).length < state.pax){ alert('Chọn đủ ghế cho mọi hành khách'); return; }
+    renderConfirm();
+  }
+  state.step = n;
+  renderSteps();
+  document.getElementById('bookStep1').classList.toggle('hidden', n!==1);
+  document.getElementById('bookStep2').classList.toggle('hidden', n!==2);
+  document.getElementById('bookStep3').classList.toggle('hidden', n!==3);
+  if(n===2) renderSeats();
+}
+function renderSeats(){
+  document.getElementById('seatHint').textContent = `Chọn ghế · ${Object.keys(state.seats).length}/${state.pax} đã chọn`;
+  const chips = document.getElementById('paxChips'); chips.innerHTML = '';
+  for(let i=0;i<state.pax;i++){
+    const name = document.querySelector(`.pax-name[data-i="${i}"]`)?.value || ('HK '+(i+1));
+    const short = name.trim().split(/\s+/).pop();
+    const b = document.createElement('button');
+    b.className = 'chip'+(state.activePax===i?' active':'');
+    b.textContent = short + (state.seats[i]?' '+state.seats[i]:'');
+    b.onclick = ()=>{ state.activePax=i; renderSeats(); };
+    chips.appendChild(b);
+  }
+  const map = document.getElementById('seatMap'); map.innerHTML = '';
+  const cols = ['A','B','C','D','E','F'];
+  for(let row=1;row<=12;row++){
+    map.innerHTML += `<div class="seat-row-num">${row}</div>`;
+    cols.forEach((c,ci)=>{
+      if(ci===3) map.innerHTML += `<div></div>`;
+      const id = row+c;
+      const taken = Object.entries(state.seats).find(([k,v])=>v===id);
+      const mine = state.seats[state.activePax]===id;
+      const occ = OCCUPIED.has(id);
+      const b = document.createElement('button');
+      b.className = 'seat'+(occ?' occ':mine||taken?' sel':'');
+      b.textContent = c;
+      b.disabled = occ || (taken && !mine);
+      b.onclick = ()=>{
+        if(state.seats[state.activePax]===id) delete state.seats[state.activePax];
+        else {
+          state.seats[state.activePax]=id;
+          if(state.activePax < state.pax-1) state.activePax++;
+        }
+        renderSeats();
+      };
+      map.appendChild(b);
+    });
+  }
+}
+function renderConfirm(){
+  const o = state.outbound, r = state.returnF;
+  document.getElementById('confirmFlight').innerHTML = `
+    <div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:6px">Chiều đi</div>
+    <div style="font-weight:600">${o.from.code} → ${o.to.code}</div>
+    <div style="font-size:13px;color:#64748b">${timeStr(o.dep)} – ${timeStr(o.arr)} · ${o.airline.name}</div>
+    ${r?`<div style="border-top:1px dashed #e2e8f0;margin:12px 0"></div>
+    <div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:6px">Chiều về</div>
+    <div style="font-weight:600">${r.from.code} → ${r.to.code}</div>
+    <div style="font-size:13px;color:#64748b">${timeStr(r.dep)} – ${timeStr(r.arr)} · ${r.airline.name}</div>`:''}`;
+  let paxHtml = '';
+  for(let i=0;i<state.pax;i++){
+    const n = document.querySelector(`.pax-name[data-i="${i}"]`)?.value||'';
+    paxHtml += `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>${n}</span><b style="font-family:monospace;color:var(--blue)">${state.seats[i]||'—'}</b></div>`;
+  }
+  document.getElementById('confirmPax').innerHTML = paxHtml;
+  const base = o.price + (r?r.price:0);
+  const sub = base * state.pax, tax = Math.round(sub*0.1), total = sub+tax;
+  state.total = total;
+  document.getElementById('confirmPrice').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:14px;color:#64748b;margin-bottom:6px"><span>Vé × ${state.pax}</span><span>${fmt(sub)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;color:#64748b;margin-bottom:10px"><span>Thuế 10%</span><span>${fmt(tax)}</span></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:10px"><b>Tổng cộng</b><b style="color:var(--blue);font-size:18px">${fmt(total)}</b></div>`;
+  document.getElementById('payAmount').textContent = fmt(total);
+}
+function payTab(t){
+  document.getElementById('payQr').classList.toggle('hidden', t!=='qr');
+  document.getElementById('payCard').classList.toggle('hidden', t!=='card');
+  document.getElementById('tabQr').className = 'chip'+(t==='qr'?' active':'');
+  document.getElementById('tabQr').style.cssText = 'flex:1;justify-content:center;border:none'+(t!=='qr'?';background:transparent':'');
+  document.getElementById('tabCard').className = 'chip'+(t==='card'?' active':'');
+  document.getElementById('tabCard').style.cssText = 'flex:1;justify-content:center;border:none'+(t!=='card'?';background:transparent':'');
+}
+// QR mock
+(function(){
+  const g = document.getElementById('qrGrid');
+  for(let i=0;i<49;i++){
+    const c = document.createElement('div');
+    c.style.cssText = `background:${((i*7+3)%11)>4?'#0f172a':'#f1f5f9'};border-radius:2px`;
+    g.appendChild(c);
+  }
+})();
+function doPay(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code=''; for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  state.bookingCode = code;
+  document.getElementById('bookCode').textContent = code;
+  document.getElementById('passAirline').textContent = state.outbound.airline.name;
+  const o = state.outbound;
+  let body = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="text-align:center"><div style="font-size:28px;font-weight:700">${o.from.code}</div><div style="font-size:11px;color:#94a3b8">${timeStr(o.dep)}</div></div>
+    <div style="flex:1;text-align:center;color:#94a3b8;font-size:12px">——✈——</div>
+    <div style="text-align:center"><div style="font-size:28px;font-weight:700">${o.to.code}</div><div style="font-size:11px;color:#94a3b8">${timeStr(o.arr)}</div></div>
+  </div>`;
+  for(let i=0;i<state.pax;i++){
+    const n = document.querySelector(`.pax-name[data-i="${i}"]`)?.value||'';
+    body += `<div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-top:1px solid #f1f5f9"><span>${n}</span><b style="font-family:monospace;color:var(--blue)">${state.seats[i]}</b></div>`;
+  }
+  body += `<div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0"><span style="color:#64748b">Tổng</span><b>${fmt(state.total)}</b></div>`;
+  document.getElementById('passBody').innerHTML = body;
+  go('confirmed');
+}
+function go(name){
+  ['home','results','booking','payment','confirmed'].forEach(s=>{
+    document.getElementById('sc-'+s).classList.toggle('hidden', s!==name);
+  });
+  if(name==='home') document.getElementById('hdrRoute').textContent = '';
+  window.scrollTo(0,0);
+}
+function resetAll(){
+  state = { trip:'oneway', from:null, to:null, flights:[], sort:'best', selectingReturn:false, outbound:null, returnF:null, pax:1, cabin:'economy', step:1, seats:{}, activePax:0, bookingCode:'' };
+  syncAirports(); go('home');
+}
+</script>
+</body>
+</html>
