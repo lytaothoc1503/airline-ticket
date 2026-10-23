@@ -18,20 +18,89 @@ interface Props {
 
 type AdminTab = 'overview' | 'bookings' | 'flights';
 
+const API = 'http://localhost:3001/api';
+const KEY_STORE = 'admin_key';
+
+function getStoredKey() {
+  try {
+    return sessionStorage.getItem(KEY_STORE) || '';
+  } catch {
+    return '';
+  }
+}
+
 export default function AdminDashboard({ onBack }: Props) {
   const [tab, setTab] = useState<AdminTab>('overview');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [search, setSearch] = useState('');
+  const [adminKey, setAdminKey] = useState('');
+  const [keyInput, setKeyInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [checking, setChecking] = useState(false);
+
+  // Xác thực với server: khóa nằm trong sessionStorage, đóng tab là mất
+  async function verifyKey(key: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API}/admin/check`, { headers: { 'x-admin-key': key } });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('airline_bookings') || '[]';
-      const parsed = JSON.parse(raw);
-      setBookings(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setBookings([]);
-    }
+    const saved = getStoredKey();
+    if (!saved) return;
+    verifyKey(saved).then(ok => {
+      if (ok) setAdminKey(saved);
+      else sessionStorage.removeItem(KEY_STORE);
+    });
   }, []);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setChecking(true);
+    setLoginError('');
+    const ok = await verifyKey(keyInput.trim());
+    setChecking(false);
+    if (!ok) {
+      setLoginError('Sai khóa admin hoặc server API chưa chạy (cổng 3001).');
+      return;
+    }
+    try {
+      sessionStorage.setItem(KEY_STORE, keyInput.trim());
+    } catch {
+      // bỏ qua: chỉ mất phiên khi tải lại
+    }
+    setAdminKey(keyInput.trim());
+    setKeyInput('');
+  }
+
+  // Sau khi đăng nhập: gộp đơn từ server với localStorage (server ưu tiên)
+  useEffect(() => {
+    if (!adminKey) return;
+    let local: Booking[] = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem('airline_bookings') || '[]');
+      local = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      local = [];
+    }
+    setBookings(local);
+
+    fetch(`${API}/bookings`, { headers: { 'x-admin-key': adminKey } })
+      .then(r => (r.ok ? r.json() : []))
+      .then((server: Booking[]) => {
+        if (!Array.isArray(server)) return;
+        const byCode = new Map<string, Booking>();
+        local.forEach(b => byCode.set(b.bookingCode, b));
+        server.forEach(b => byCode.set(b.bookingCode, b));
+        setBookings(
+          [...byCode.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        );
+      })
+      .catch(() => {});
+  }, [adminKey]);
 
   const stats = useMemo(() => {
     const confirmed = bookings.filter(b => b.status === 'confirmed');
@@ -68,8 +137,9 @@ export default function AdminDashboard({ onBack }: Props) {
     localStorage.setItem('airline_bookings', JSON.stringify(next));
 
     // Đồng bộ với backend nếu đang chạy (tránh doanh thu lệch giữa 2 nơi)
-    fetch(`http://localhost:3001/api/bookings/${encodeURIComponent(id)}/cancel`, {
+    fetch(`${API}/bookings/${encodeURIComponent(id)}/cancel`, {
       method: 'PATCH',
+      headers: { 'x-admin-key': adminKey },
     }).catch(() => {
       // Backend offline – localStorage là đủ
     });
@@ -93,6 +163,40 @@ export default function AdminDashboard({ onBack }: Props) {
       })
     );
   }, []);
+
+  if (!adminKey) {
+    return (
+      <div className="max-w-sm mx-auto">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-blue-600 mb-5"
+        >
+          <ArrowLeft className="w-4 h-4" /> Quay lại
+        </button>
+        <form onSubmit={handleLogin} className="card p-6 space-y-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Đăng nhập admin</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Nhập khóa admin do server API in ra khi khởi động.
+            </p>
+          </div>
+          <input
+            type="password"
+            className="input-field"
+            placeholder="Khóa admin"
+            autoComplete="off"
+            value={keyInput}
+            onChange={e => setKeyInput(e.target.value)}
+            autoFocus
+          />
+          {loginError && <p className="text-sm text-red-500">{loginError}</p>}
+          <button type="submit" disabled={!keyInput.trim() || checking} className="btn-primary w-full">
+            {checking ? 'Đang kiểm tra...' : 'Đăng nhập'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto">
