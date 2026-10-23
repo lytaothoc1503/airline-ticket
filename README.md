@@ -79,7 +79,7 @@ Mở http://127.0.0.1:8765. Muốn xem trên điện thoại, dùng cùng Wi‑F
 | GET | `/api/flights` | Danh sách chuyến lưu trên server |
 | POST | `/api/flights` | Thêm chuyến |
 
-API chưa có xác thực và cho phép mọi nguồn (CORS mở) – chỉ dùng khi phát triển trên máy cá nhân.
+Các endpoint admin (`GET /api/bookings`, `/api/stats`, `PATCH .../cancel`, `POST /api/flights`, `GET /api/admin/check`) cần header `x-admin-key`. Đặt khóa bằng biến môi trường `ADMIN_KEY` (PowerShell: `$env:ADMIN_KEY='matkhau'; npm run server`); không đặt thì server tự sinh khóa và in ra console. `GET /api/bookings/:code` chỉ trả thông tin tối thiểu (không có CCCD, email, SĐT). `POST /api/bookings` được kiểm tra dữ liệu, chặn trùng mã và luôn đặt trạng thái do server quyết định. CORS chỉ cho phép localhost:5173/4173. Vẫn là bản demo, không dùng cho dữ liệu khách thật.
 
 ## Cấu trúc thư mục
 
