@@ -10,7 +10,7 @@ import {
   Search,
 } from 'lucide-react';
 import { Airport, SearchParams, CabinClass, TripType } from '../types/flight';
-import { AIRPORTS, POPULAR_ROUTES } from '../data/mockFlights';
+import { AIRPORTS, POPULAR_ROUTES, toLocalDateStr } from '../data/mockFlights';
 
 interface Props {
   onSearch: (params: SearchParams) => void;
@@ -29,7 +29,7 @@ export default function FlightSearch({ onSearch, initialParams }: Props) {
   const [searchAirport, setSearchAirport] = useState('');
 
   function getToday() {
-    return new Date().toISOString().slice(0, 10);
+    return toLocalDateStr(new Date());
   }
 
   function swapAirports() {

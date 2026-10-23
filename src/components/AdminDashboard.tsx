@@ -10,7 +10,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { Booking } from '../types/flight';
-import { formatPrice, AIRLINES } from '../data/mockFlights';
+import { formatPrice, AIRLINES, toLocalDateStr } from '../data/mockFlights';
 
 interface Props {
   onBack: () => void;
@@ -37,8 +37,8 @@ export default function AdminDashboard({ onBack }: Props) {
     const confirmed = bookings.filter(b => b.status === 'confirmed');
     const revenue = confirmed.reduce((s, b) => s + b.totalPrice, 0);
     const passengers = confirmed.reduce((s, b) => s + b.passengers.length, 0);
-    const today = new Date().toISOString().slice(0, 10);
-    const todayBookings = confirmed.filter(b => b.createdAt.slice(0, 10) === today);
+    const today = toLocalDateStr(new Date());
+    const todayBookings = confirmed.filter(b => toLocalDateStr(b.createdAt) === today);
     return {
       totalBookings: confirmed.length,
       revenue,
@@ -66,6 +66,13 @@ export default function AdminDashboard({ onBack }: Props) {
     );
     setBookings(next);
     localStorage.setItem('airline_bookings', JSON.stringify(next));
+
+    // Đồng bộ với backend nếu đang chạy (tránh doanh thu lệch giữa 2 nơi)
+    fetch(`http://localhost:3001/api/bookings/${encodeURIComponent(id)}/cancel`, {
+      method: 'PATCH',
+    }).catch(() => {
+      // Backend offline – localStorage là đủ
+    });
   }
 
   // Mock flight inventory for admin
